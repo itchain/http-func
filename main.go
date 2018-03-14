@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,45 +9,68 @@ import (
 
 func execFunc(input string) string {
 
-	cmd := exec.Command("./hellofunc")
+	log.Println(string("exeFunc input : " + input))
+	cmd := exec.Command("hellofunc")
+	if cmd == nil {
+		log.Println("cmd is nil")
+	}
 
 	stdin, err := cmd.StdinPipe()
 	if nil != err {
-		log.Fatalf("Error obtaining stdin: %s", err.Error())
+		log.Printf("Error obtaining stdin: %s", err.Error())
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if nil != err {
-		log.Fatalf("Error obtaining stdout: %s", err.Error())
+		log.Printf("Error obtaining stdout: %s", err.Error())
 	}
 
-	cmd.Start()
+	errStart := cmd.Start()
+	if errStart != nil {
+		log.Printf("cmd start error : %s", errStart.Error())
+	}
+
 	stdin.Write([]byte(input))
 	stdin.Close()
 	stdoutByte, _ := ioutil.ReadAll(stdout)
 	cmd.Wait()
 
-	//log.Println(string(stdoutByte))
+	log.Println("exeFunc output : " + string(stdoutByte))
 	return string(stdoutByte)
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 
-	inputStr := r.URL.Query()["msg"][0]
-	retStr := execFunc(inputStr)
+	//inputStr := r.URL.Query()["msg"]
+	inputStr, err := r.URL.Query()["msg"]
 
-	w.Header().Set("Content-Type", "text/html")
+	if !err || len(inputStr) < 1 {
+		log.Println("Url Param 'msg' is missing")
+		return
+	}
+
+	log.Print(inputStr[0])
+
+	//inputStr := r.FormValue("msg")
+
+	retStr := execFunc(inputStr[0])
+
+	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(retStr))
 
 	log.Print(retStr)
+	log.Print([]byte(retStr))
 	log.Println("Index page was called")
 }
+
+func handlerICon(w http.ResponseWriter, r *http.Request) {}
 
 func main() {
 
 	http.HandleFunc("/", handleIndex)
+	http.HandleFunc("/favicon.ico", handlerICon)
 
 	log.Println("Hello Cocktail Server start")
-	fmt.Println(http.ListenAndServe(":3000", nil))
+	http.ListenAndServe(":3000", nil)
 
 }
