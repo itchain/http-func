@@ -6,6 +6,8 @@ COPY ./main.go  /go/src/http-func
 
 RUN go build -o httpfunc .
 
-COPY ./hellofunc .
+FROM golang:latest
 
-ENTRYPOINT [ "http-func" ]
+COPY --from=0 /go/src/http-func/httpfunc /usr/local/bin
+
+CMD [ "httpfunc" ]
